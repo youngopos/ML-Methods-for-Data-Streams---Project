@@ -39,7 +39,12 @@ from stream_pipeline import (
     NUMERIC_FEATURES, CATEGORICAL_FEATURES,
     StreamFeatureExtractor, TopKAccuracy, DriftMonitor,
 )
+<<<<<<< HEAD
 from river import metrics as rmetrics
+=======
+from active_adaptation import ActiveAdaptiveClassifier
+from river import drift, metrics as rmetrics
+>>>>>>> caf0d9533982b1eab6fedc569b199e3ccfdf56e5
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +86,34 @@ def build_models(arf_n_models: int = 5) -> dict:
         "adaptive_forest":    lambda: _preprocess() | forest.ARFClassifier(
             n_models=arf_n_models, seed=42,
         ),
+<<<<<<< HEAD
+=======
+        # ----- Active-adaptive variants -----
+        # Wrap a non-adaptive base learner with the warning/drift workflow.
+        # Useful as a head-to-head test: does external adaptation help a
+        # model that wasn't designed for it (NB, plain HT)? And does it add
+        # anything on top of HAT, which already adapts internally?
+
+        "active_naive_bayes":     lambda: ActiveAdaptiveClassifier(
+            model_factory=lambda: _preprocess() | naive_bayes.GaussianNB(),
+            detector_factory=lambda: drift.binary.DDM(),
+        ),
+        "active_hoeffding_tree":  lambda: ActiveAdaptiveClassifier(
+            model_factory=lambda: _preprocess() | tree.HoeffdingTreeClassifier(
+                grace_period=200,
+            ),
+            detector_factory=lambda: drift.binary.DDM(),
+        ),
+        "active_hoeffding_adaptive": lambda: ActiveAdaptiveClassifier(
+            # HAT already adapts internally. Wrapping it tests whether
+            # external warning-window swapping ADDS to internal subtree
+            # replacement, or just thrashes.
+            model_factory=lambda: _preprocess() | tree.HoeffdingAdaptiveTreeClassifier(
+                grace_period=200, seed=42,
+            ),
+            detector_factory=lambda: drift.binary.DDM(),
+        ),
+>>>>>>> caf0d9533982b1eab6fedc569b199e3ccfdf56e5
     }
 
 
